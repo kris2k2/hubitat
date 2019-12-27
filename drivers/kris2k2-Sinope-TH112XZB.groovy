@@ -21,7 +21,7 @@
 
 metadata {
 
-	definition(name: "Sinope TH112XZB Thermostat", namespace: "kris2k2", author: "Kristopher Lalletti") {
+    definition(name: "Sinope TH112XZB Thermostat", namespace: "kris2k2", author: "Kristopher Lalletti") {
         // https://docs.hubitat.com/index.php?title=Driver_Capability_List#Thermostat
         //
         capability "Configuration"
@@ -41,9 +41,9 @@ metadata {
             input name: "prefKeyLock", type: "bool", title: "Enable keylock", defaultValue: false
         }        
 
-		fingerprint profileId: "0104", deviceId: "119C", manufacturer: "Sinope Technologies", model: "TH1123ZB", deviceJoinName: "TH1123ZB"
-		fingerprint profileId: "0104", deviceId: "119C", manufacturer: "Sinope Technologies", model: "TH1124ZB", deviceJoinName: "TH1124ZB"
-	}
+        fingerprint profileId: "0104", deviceId: "119C", manufacturer: "Sinope Technologies", model: "TH1123ZB", deviceJoinName: "TH1123ZB"
+        fingerprint profileId: "0104", deviceId: "119C", manufacturer: "Sinope Technologies", model: "TH1124ZB", deviceJoinName: "TH1124ZB"
+    }
 }
 
 //-- Installation ----------------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ def updated() {
         log.info "updated(): Error unschedule() - ${errMsg}"
     }
     runIn(1,configure)
-    runEvery3Hours(configure)
+    runEvery3Hours(configure)    
 }
 
 def uninstalled() {
@@ -79,15 +79,15 @@ def uninstalled() {
 // parse events into attributes
 def parse(String description) {
     def result = []
-	def scale = getTemperatureScale()
-	state?.scale = scale
-	def cluster = zigbee.parse(description)
-	if (description?.startsWith("read attr -")) {
+    def scale = getTemperatureScale()
+    state?.scale = scale
+    def cluster = zigbee.parse(description)
+    if (description?.startsWith("read attr -")) {
         // log.info description
-    	def descMap = zigbee.parseDescriptionAsMap(description)
+        def descMap = zigbee.parseDescriptionAsMap(description)
         result += createCustomMap(descMap)
         if(descMap.additionalAttrs){
-       		def mapAdditionnalAttrs = descMap.additionalAttrs
+               def mapAdditionnalAttrs = descMap.additionalAttrs
             mapAdditionnalAttrs.each{add ->
                 add.cluster = descMap.cluster
                 result += createCustomMap(add)
@@ -95,33 +95,33 @@ def parse(String description) {
         }
     }
     
-	return result
+    return result
 }
 
 private createCustomMap(descMap){
-	def result = null
-	def map = [: ]
-		if (descMap.cluster == "0201" && descMap.attrId == "0000") {
-			map.name = "temperature"
-			map.value = getTemperature(descMap.value)
+    def result = null
+    def map = [: ]
+        if (descMap.cluster == "0201" && descMap.attrId == "0000") {
+            map.name = "temperature"
+            map.value = getTemperature(descMap.value)
             
-		} else if (descMap.cluster == "0201" && descMap.attrId == "0008") {
-			map.name = "thermostatOperatingState"
-			map.value = getHeatingDemand(descMap.value)
-			map.value = (map.value.toInteger() < 10) ? "idle" : "heating"
+        } else if (descMap.cluster == "0201" && descMap.attrId == "0008") {
+            map.name = "thermostatOperatingState"
+            map.value = getHeatingDemand(descMap.value)
+            map.value = (map.value.toInteger() < 10) ? "idle" : "heating"
         
-		} else if (descMap.cluster == "0201" && descMap.attrId == "0012") {
+        } else if (descMap.cluster == "0201" && descMap.attrId == "0012") {
             map.name = "heatingSetpoint"
             map.value = getTemperature(descMap.value)
             log.info "heatingSetpoint: ${map.value}"
             
-		} else if (descMap.cluster == "0201" && descMap.attrId == "0015") {
-			map.name = "heatingSetpointRangeLow"
-			map.value = getTemperature(descMap.value)
+        } else if (descMap.cluster == "0201" && descMap.attrId == "0015") {
+            map.name = "heatingSetpointRangeLow"
+            map.value = getTemperature(descMap.value)
 
-		} else if (descMap.cluster == "0201" && descMap.attrId == "0016") {
-			map.name = "heatingSetpointRangeHigh"
-			map.value = getTemperature(descMap.value)
+        } else if (descMap.cluster == "0201" && descMap.attrId == "0016") {
+            map.name = "heatingSetpointRangeHigh"
+            map.value = getTemperature(descMap.value)
             
         } else if (descMap.cluster == "0201" && descMap.attrId == "001C") {
             map.name = "thermostatMode"
@@ -131,20 +131,20 @@ private createCustomMap(descMap){
             map.name = "thermostatLock"
             map.value = getLockMap()[descMap.value]
             
-		} else if (descMap.cluster == "0B04" && descMap.attrId == "050B") {
+        } else if (descMap.cluster == "0B04" && descMap.attrId == "050B") {
             map.name = "thermostatPower"
             map.value = getActivePower(descMap.value)
         }
         
-	if (map) {
-		def isChange = isStateChange(device, map.name, map.value.toString())
-		map.displayed = isChange
-		if ((map.name.toLowerCase().contains("temp")) || (map.name.toLowerCase().contains("setpoint"))) {
-			map.scale = scale
-		}
+    if (map) {
+        def isChange = isStateChange(device, map.name, map.value.toString())
+        map.displayed = isChange
+        if ((map.name.toLowerCase().contains("temp")) || (map.name.toLowerCase().contains("setpoint"))) {
+            map.scale = scale
+        }
         // log.info "map: ${map}"
-		result = createEvent(map)
-	}
+        result = createEvent(map)
+    }
     return result
 }
 
@@ -178,21 +178,21 @@ def configure(){
     updateDataValue("lastRunningMode", "heat") // heat is the only compatible mode for this device
 
     // Prepare our zigbee commands
-	def cmds = []
+    def cmds = []
 
     // Configure Reporting
-    cmds += zigbee.configureReporting(0x0201, 0x0000, 0x29, 19, 301, 50) 	//local temperature
-	cmds += zigbee.configureReporting(0x0201, 0x0008, 0x0020, 4, 300, 10)	//PI heating demand
-    cmds += zigbee.configureReporting(0x0201, 0x0012, 0x0029, 15, 302, 40) 	//occupied heating setpoint    
-    cmds += zigbee.configureReporting(0x0204, 0x0000, 0x30, 1, 0)   	    //Attribute ID 0x0000 = temperature display mode, Data Type: 8 bits enum
-    cmds += zigbee.configureReporting(0x0204, 0x0001, 0x30, 1, 0)   	    //Attribute ID 0x0001 = keypad lockout, Data Type: 8 bits enum
+    cmds += zigbee.configureReporting(0x0201, 0x0000, 0x29, 19, 301, 50)     //local temperature
+    cmds += zigbee.configureReporting(0x0201, 0x0008, 0x0020, 4, 300, 10)    //PI heating demand
+    cmds += zigbee.configureReporting(0x0201, 0x0012, 0x0029, 15, 302, 40)     //occupied heating setpoint    
+    cmds += zigbee.configureReporting(0x0204, 0x0000, 0x30, 1, 0)           //Attribute ID 0x0000 = temperature display mode, Data Type: 8 bits enum
+    cmds += zigbee.configureReporting(0x0204, 0x0001, 0x30, 1, 0)           //Attribute ID 0x0001 = keypad lockout, Data Type: 8 bits enum
     cmds += zigbee.configureReporting(0x0B04, 0x050B, 0x29, 60, 599, 0x64)  //Thermostat power draw
     
     // Configure displayed scale
     if (getTemperatureScale() == 'C') {
-        cmds += zigbee.writeAttribute(0x0204, 0x0000, 0x30, 0)	// Wr °C on thermostat display
+        cmds += zigbee.writeAttribute(0x0204, 0x0000, 0x30, 0)    // Wr °C on thermostat display
     } else {
-        cmds += zigbee.writeAttribute(0x0204, 0x0000, 0x30, 1)	// Wr °F on thermostat display 
+        cmds += zigbee.writeAttribute(0x0204, 0x0000, 0x30, 1)    // Wr °F on thermostat display 
     }
 
     // Configure keylock
@@ -218,7 +218,7 @@ def configure(){
     
     // Configure Clock Display
     if (prefDisplayClock) { 
-    	//To refresh the time        
+        //To refresh the time        
         def d = new Date()
         int curHourSeconds = (d.hours * 60 * 60) + (d.minutes * 60) + d.seconds
         cmds += zigbee.writeAttribute(0xFF01, 0x0020, 0x23, curHourSeconds, [mfgCode: "0x119C"])
@@ -249,7 +249,7 @@ def cool() {
 
 def emergencyHeat() {
     log.info "emergencyHeat(): mode is not available for this device. => Defaulting to heat mode instead."
-	heat()
+    heat()
 }
 
 def fanAuto() {
@@ -265,7 +265,7 @@ def fanOn() {
 }
 
 def heat() {
-	log.info "heat(): mode set"
+    log.info "heat(): mode set"
     
     def cmds = []
     cmds += zigbee.writeAttribute(0x0201, 0x001C, 0x30, 04, [:], 1000) // MODE
@@ -276,7 +276,7 @@ def heat() {
 }
 
 def off() {
-	log.info "off(): mode set"
+    log.info "off(): mode set"
     
     def cmds = []
     cmds += zigbee.writeAttribute(0x0201, 0x001C, 0x30, 0)
@@ -291,12 +291,12 @@ def setCoolingSetpoint(degrees) {
 
 def setHeatingSetpoint(preciseDegrees) {
     log.info "setHeatingSetpoint(${preciseDegrees})"
-	if (preciseDegrees != null) {
-		def temperatureScale = getTemperatureScale()
-		def degrees = new BigDecimal(preciseDegrees).setScale(1, BigDecimal.ROUND_HALF_UP)
+    if (preciseDegrees != null) {
+        def temperatureScale = getTemperatureScale()
+        def degrees = new BigDecimal(preciseDegrees).setScale(1, BigDecimal.ROUND_HALF_UP)
         def cmds = []        
         
-		log.info "setHeatingSetpoint(${degrees}:${temperatureScale})"
+        log.info "setHeatingSetpoint(${degrees}:${temperatureScale})"
         
         def celsius = (temperatureScale == "C") ? degrees as Float : (fahrenheitToCelsius(degrees) as Float).round(2)
         int celsius100 = Math.round(celsius * 100)
@@ -305,7 +305,7 @@ def setHeatingSetpoint(preciseDegrees) {
 
         // Submit zigbee commands
         sendZigbeeCommands(cmds)         
-	} 
+    } 
 }
 
 def setSchedule(JSON_OBJECT){
@@ -317,12 +317,12 @@ def setThermostatFanMode(fanmode){
 }
 
 def setThermostatMode(String value) {
-	log.info "setThermostatMode(${value})"
-	def currentMode = device.currentState("thermostatMode")?.value
-	def lastTriedMode = state.lastTriedMode ?: currentMode ?: "heat"
-	def modeNumber;
-	Integer setpointModeNumber;
-	def modeToSendInString;
+    log.info "setThermostatMode(${value})"
+    def currentMode = device.currentState("thermostatMode")?.value
+    def lastTriedMode = state.lastTriedMode ?: currentMode ?: "heat"
+    def modeNumber;
+    Integer setpointModeNumber;
+    def modeToSendInString;
     switch (value) {
         case "heat":
         case "emergency heat":
@@ -339,7 +339,7 @@ def setThermostatMode(String value) {
 }
 
 def eco() {
-	log.info "eco()"
+    log.info "eco()"
     
     def cmds = []
     cmds += zigbee.writeAttribute(0x0201, 0x001C, 0x30, 04, [:], 1000) // MODE
@@ -368,7 +368,7 @@ def deviceNotification(text) {
  
     
         // Submit zigbee commands    
-	    sendZigbeeCommands(cmds)
+        sendZigbeeCommands(cmds)
     } else {
         log.info "deviceNotification() : Not setting any outdoor weather, since feature is disabled."  
     }
@@ -378,21 +378,21 @@ def deviceNotification(text) {
 
 //-- Private functions -----------------------------------------------------------------------------------
 private void sendZigbeeCommands(cmds) {
-	cmds.removeAll { it.startsWith("delay") }
+    cmds.removeAll { it.startsWith("delay") }
     def hubAction = new hubitat.device.HubMultiAction(cmds, hubitat.device.Protocol.ZIGBEE)
     sendHubCommand(hubAction)
 }
 
 private getTemperature(value) {
-	if (value != null) {
-		def celsius = Integer.parseInt(value, 16) / 100
-		if (getTemperatureScale() == "C") {
-			return celsius
-		}
+    if (value != null) {
+        def celsius = Integer.parseInt(value, 16) / 100
+        if (getTemperatureScale() == "C") {
+            return celsius
+        }
         else {
-			return Math.round(celsiusToFahrenheit(celsius))
-		}
-	}
+            return Math.round(celsiusToFahrenheit(celsius))
+        }
+    }
 }
 
 private getModeMap() {
@@ -423,8 +423,8 @@ private getTemperatureScale() {
 }
 
 private getHeatingDemand(value) {
-	if (value != null) {
-		def demand = Integer.parseInt(value, 16)
-		return demand.toString()
-	}
+    if (value != null) {
+        def demand = Integer.parseInt(value, 16)
+        return demand.toString()
+    }
 }
