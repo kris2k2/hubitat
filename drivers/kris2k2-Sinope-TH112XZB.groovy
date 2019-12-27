@@ -351,21 +351,20 @@ def eco() {
 
 def deviceNotification(text) {
     log.info "deviceNotification(${text})"
+    double outdoorTemp = text.toDouble()
     def cmds = []
 
     if (prefDisplayOutdoorTemp) {
-        log.info "deviceNotification() : Setting outdoor weather to ${text}"
-        int outdoorTemp = Integer.parseInt(text)
+        log.info "deviceNotification() : Received outdoor weather : ${text} : ${outdoorTemp}"
     
-        if(getTemperatureScale() == 'F') {
-            //the value sent to the thermostat must be in C
-            //the thermostat make the conversion to F
-            outdoorTemp = fahrenheitToCelsius(outdoorTemp).toDouble().round()
+        //the value sent to the thermostat must be in C
+        if (getTemperatureScale() == 'F') {    
+            outdoorTemp = fahrenheitToCelsius(outdoorTemp).toDouble()
         }        
-        int outdoorTempToSend = outdoorTemp*100
-        cmds += zigbee.writeAttribute(0xFF01, 0x0011, 0x21, 10800)  //set the outdoor temperature timeout to 3 hours
-        cmds += zigbee.writeAttribute(0xFF01, 0x0010, 0x29, outdoorTempToSend, [mfgCode: "0x119C"])
- 
+        
+        int outdoorTempDevice = outdoorTemp*100
+        cmds += zigbee.writeAttribute(0xFF01, 0x0011, 0x21, 10800)   //set the outdoor temperature timeout to 3 hours
+        cmds += zigbee.writeAttribute(0xFF01, 0x0010, 0x29, outdoorTempDevice, [mfgCode: "0x119C"]) //set the outdoor temperature as integer
     
         // Submit zigbee commands    
         sendZigbeeCommands(cmds)
