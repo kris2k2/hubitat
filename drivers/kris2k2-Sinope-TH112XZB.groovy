@@ -28,6 +28,7 @@ metadata {
         capability "TemperatureMeasurement"
         capability "Thermostat"
         capability "Refresh"
+        capability "PowerMeter"
         
         // Receiving temperature notifications via RuleEngine
         capability "Notification"
@@ -132,7 +133,8 @@ private createCustomMap(descMap){
             map.value = getLockMap()[descMap.value]
             
         } else if (descMap.cluster == "0B04" && descMap.attrId == "050B") {
-            map.name = "thermostatPower"
+             //map.name = "thermostatPower"
+            map.name = "power"
             map.value = getActivePower(descMap.value)
         }
         
@@ -186,7 +188,8 @@ def configure(){
     cmds += zigbee.configureReporting(0x0201, 0x0012, 0x0029, 15, 302, 40)     //occupied heating setpoint    
     cmds += zigbee.configureReporting(0x0204, 0x0000, 0x30, 1, 0)           //Attribute ID 0x0000 = temperature display mode, Data Type: 8 bits enum
     cmds += zigbee.configureReporting(0x0204, 0x0001, 0x30, 1, 0)           //Attribute ID 0x0001 = keypad lockout, Data Type: 8 bits enum
-    cmds += zigbee.configureReporting(0x0B04, 0x050B, 0x29, 60, 599, 0x64)  //Thermostat power draw
+   //cmds += zigbee.configureReporting(0x0B04, 0x050B, 0x29, 60, 599, 0x64)  //Thermostat power draw
+    cmds += zigbee.configureReporting(0x0B04, 0x050B, DataType.INT16, 30, 599, 0x64) //Thermostat power draw
     
     // Configure displayed scale
     if (getTemperatureScale() == 'C') {
